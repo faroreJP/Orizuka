@@ -9,22 +9,46 @@
 
 using System.Linq;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Orizuka {
-  [UnityEngine.CreateAssetMenu]
-  public class ScriptableObjectRegistry : UnityEngine.ScriptableObject, IObjectRegistry {
+  [CreateAssetMenu]
+  public class ScriptableObjectRegistry : ScriptableObject, IObjectRegistry {
     //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     // Field
     //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-    [UnityEngine.SerializeField]  private ObjectEntry[]                           _objectEntries = null;
-                                  private Dictionary<string, UnityEngine.Object>  _objects       = null;
+    [SerializeField]  private ObjectEntry[]               _objectEntries = null;
+                      private Dictionary<string, Object>  _objects       = null;
 
     //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     // Unity Callback
     //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
     private void OnEnable () {
+      CreateObjectDictionary();
+    }
+
+    //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    // Public Static Method
+    //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+    // Create instance that stores specified object entries
+    // @Param[in] objectEntries : entries to store
+    // @Return : instance of registry
+    public static ScriptableObjectRegistry CreateInstance (IEnumerable<ObjectEntry> objectEntries) {
+      var registry = ScriptableObjectRegistry.CreateInstance<ScriptableObjectRegistry>();
+      registry._objectEntries = objectEntries.ToArray();
+      registry.CreateObjectDictionary();
+
+      return registry;
+    }
+
+    //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    // Private Method
+    //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+    private void CreateObjectDictionary () {
       if (_objectEntries != null) {
         _objects = _objectEntries
                     .Where(o => !string.IsNullOrEmpty(o.Identifier))
@@ -39,7 +63,7 @@ namespace Orizuka {
     // Get registered object
     // @Param[in] identifier : The object identifier (e.g. "someobj")
     // @Return : The specified object instance
-    public T Get<T> (string identifier) where T : UnityEngine.Object {
+    public T Get<T> (string identifier) where T : Object {
       return (T)_objects[identifier];
     }
 
@@ -49,9 +73,8 @@ namespace Orizuka {
     // @Return :
     //  true  - sucess, the obj will contain specified object instance
     //  false - failed, the obj will be null
-    public bool TryGet<T> (string identifier, out T obj) where T : UnityEngine.Object {
-      UnityEngine.Object objInstance = null;
-
+    public bool TryGet<T> (string identifier, out T obj) where T : Object {
+      Object objInstance;
       if (_objects.TryGetValue(identifier, out objInstance)) {
         obj = objInstance as T;
         return obj != null;
